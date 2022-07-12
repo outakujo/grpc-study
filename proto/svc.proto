@@ -1,0 +1,17 @@
+syntax = "proto3";
+
+package svc;
+
+option go_package = "/pb";
+
+service Service {
+  rpc Call(Req) returns (Resp);
+}
+
+message Req {
+  string param = 1;
+}
+
+message Resp {
+  string result = 1;
+}
