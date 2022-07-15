@@ -2,10 +2,13 @@ syntax = "proto3";
 
 package svc;
 
+import "google/protobuf/empty.proto";
+
 option go_package = "/pb";
 
 service Service {
   rpc Call(Req) returns (Resp);
+  rpc Ctl(google.protobuf.Empty) returns (stream Cmd);
 }
 
 message Req {
@@ -14,4 +17,9 @@ message Req {
 
 message Resp {
   string result = 1;
+}
+
+message Cmd {
+  string name = 1;
+  repeated string arg = 2;
 }
