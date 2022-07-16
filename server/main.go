@@ -2,68 +2,83 @@ package main
 
 import (
 	"context"
-	"errors"
+	"flag"
 	"github.com/gin-gonic/gin"
 	"google.golang.org/grpc"
-	"google.golang.org/grpc/metadata"
 	"google.golang.org/protobuf/types/known/emptypb"
 	"grpc-study/pb"
 	"net"
 	"net/http"
+	"strconv"
 )
 
 type Server struct {
 	pb.UnimplementedServiceServer
+	Interceptor
 }
 
-func (r *Server) Call(_ context.Context, req *pb.Req) (*pb.Resp, error) {
+func (r *Server) Call(ctx context.Context, req *pb.Req) (*pb.Resp, error) {
+	end, err := r.Auth(ctx, manager)
+	if err != nil {
+		return nil, err
+	}
 	return &pb.Resp{
-		Result: req.Param + "ddd",
+		Result: req.Param + "," + end.Id,
 	}, nil
 }
 
 func (r *Server) Ctl(_ *emptypb.Empty, steam pb.Service_CtlServer) error {
-	end := steam.Context().Value("end").(*End)
+	end, err := r.Auth(steam.Context(), manager)
+	if err != nil {
+		return err
+	}
 	for {
-		err := steam.Send(<-end.Ch)
+		err = steam.Send(<-end.Ch)
 		if err != nil {
 			return err
 		}
 	}
 }
 
+var manager = NewManager()
+
 func main() {
+	port := flag.Int("port", 9009, "port")
+	flag.Parse()
 	var ser Server
-	manager := NewManager()
-	interceptor := grpc.UnaryInterceptor(func(ctx context.Context, req interface{},
-		info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (resp interface{}, err error) {
-		ic, _ := metadata.FromIncomingContext(ctx)
-		ids := ic.Get("id")
-		if len(ids) == 0 {
-			return nil, errors.New("not auth")
-		}
-		id := ids[0]
-		end := manager.Add(id)
-		ctx = context.WithValue(ctx, "end", end)
-		return handler(ctx, req)
-	})
 	engine := gin.New()
-	engine.GET("ctl", func(c *gin.Context) {
-		query := c.Query("id")
-		if query == "" {
-			c.JSON(http.StatusOK, "id empty")
+	engine.POST("ctl", func(c *gin.Context) {
+		var da = struct {
+			Id   string
+			Name string
+			Arg  []string
+		}{}
+		err := c.ShouldBind(&da)
+		if err != nil {
+			c.JSON(http.StatusOK, err.Error())
 			return
 		}
-		end := manager.Add(query)
-		end.Ch <- &pb.Cmd{Name: "go", Arg: []string{"version"}}
+		if da.Id == "" {
+			c.JSON(http.StatusOK, "id not be empty")
+			return
+		}
+		if da.Name == "" {
+			c.JSON(http.StatusOK, "name not be empty")
+			return
+		}
+		end := manager.Add(da.Id)
+		end.Ch <- &pb.Cmd{Name: da.Name, Arg: da.Arg}
 		c.JSON(http.StatusOK, "ok")
 	})
 	go func() {
-		engine.Run()
+		err := engine.Run(":" + strconv.Itoa(*port))
+		if err != nil {
+			panic(err)
+		}
 	}()
-	server := grpc.NewServer(interceptor)
+	server := grpc.NewServer()
 	pb.RegisterServiceServer(server, &ser)
-	listen, err := net.Listen("tcp", ":9009")
+	listen, err := net.Listen("tcp", ":"+strconv.Itoa(*port+1))
 	if err != nil {
 		panic(err)
 	}
