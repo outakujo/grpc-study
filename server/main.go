@@ -17,23 +17,23 @@ type Server struct {
 	Interceptor
 }
 
-func (r *Server) Call(ctx context.Context, req *pb.Req) (*pb.Resp, error) {
-	end, err := r.Auth(ctx, manager)
-	if err != nil {
-		return nil, err
-	}
+func (r *Server) Register(_ context.Context, req *pb.Req) (*pb.Resp, error) {
+	end := manager.Add(req.Id)
 	return &pb.Resp{
-		Result: req.Param + "," + end.Id,
+		Result: "end:" + end.Id,
 	}, nil
 }
 
-func (r *Server) Ctl(_ *emptypb.Empty, steam pb.Service_CtlServer) error {
-	end, err := r.Auth(steam.Context(), manager)
+func (r *Server) Ctl(_ *emptypb.Empty, stream pb.Service_CtlServer) error {
+	end, err := r.Auth(stream.Context(), manager)
 	if err != nil {
 		return err
 	}
+	defer func() {
+		manager.Del(end.Id)
+	}()
 	for {
-		err = steam.Send(<-end.Ch)
+		err = stream.Send(<-end.Ch)
 		if err != nil {
 			return err
 		}
@@ -66,7 +66,11 @@ func main() {
 			c.JSON(http.StatusOK, "name not be empty")
 			return
 		}
-		end := manager.Add(da.Id)
+		end := manager.Get(da.Id)
+		if end == nil {
+			c.JSON(http.StatusOK, NotExistError.Error())
+			return
+		}
 		end.Ch <- &pb.Cmd{Name: da.Name, Arg: da.Arg}
 		c.JSON(http.StatusOK, "ok")
 	})

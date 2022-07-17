@@ -7,12 +7,12 @@ import "google/protobuf/empty.proto";
 option go_package = "/pb";
 
 service Service {
-  rpc Call(Req) returns (Resp);
+  rpc Register(Req) returns (Resp);
   rpc Ctl(google.protobuf.Empty) returns (stream Cmd);
 }
 
 message Req {
-  string param = 1;
+  string id = 1;
 }
 
 message Resp {

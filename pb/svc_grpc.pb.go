@@ -23,7 +23,7 @@ const _ = grpc.SupportPackageIsVersion7
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type ServiceClient interface {
-	Call(ctx context.Context, in *Req, opts ...grpc.CallOption) (*Resp, error)
+	Register(ctx context.Context, in *Req, opts ...grpc.CallOption) (*Resp, error)
 	Ctl(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (Service_CtlClient, error)
 }
 
@@ -35,9 +35,9 @@ func NewServiceClient(cc grpc.ClientConnInterface) ServiceClient {
 	return &serviceClient{cc}
 }
 
-func (c *serviceClient) Call(ctx context.Context, in *Req, opts ...grpc.CallOption) (*Resp, error) {
+func (c *serviceClient) Register(ctx context.Context, in *Req, opts ...grpc.CallOption) (*Resp, error) {
 	out := new(Resp)
-	err := c.cc.Invoke(ctx, "/svc.Service/Call", in, out, opts...)
+	err := c.cc.Invoke(ctx, "/svc.Service/Register", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -80,7 +80,7 @@ func (x *serviceCtlClient) Recv() (*Cmd, error) {
 // All implementations must embed UnimplementedServiceServer
 // for forward compatibility
 type ServiceServer interface {
-	Call(context.Context, *Req) (*Resp, error)
+	Register(context.Context, *Req) (*Resp, error)
 	Ctl(*emptypb.Empty, Service_CtlServer) error
 	mustEmbedUnimplementedServiceServer()
 }
@@ -89,8 +89,8 @@ type ServiceServer interface {
 type UnimplementedServiceServer struct {
 }
 
-func (UnimplementedServiceServer) Call(context.Context, *Req) (*Resp, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method Call not implemented")
+func (UnimplementedServiceServer) Register(context.Context, *Req) (*Resp, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method Register not implemented")
 }
 func (UnimplementedServiceServer) Ctl(*emptypb.Empty, Service_CtlServer) error {
 	return status.Errorf(codes.Unimplemented, "method Ctl not implemented")
@@ -108,20 +108,20 @@ func RegisterServiceServer(s grpc.ServiceRegistrar, srv ServiceServer) {
 	s.RegisterService(&Service_ServiceDesc, srv)
 }
 
-func _Service_Call_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _Service_Register_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(Req)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(ServiceServer).Call(ctx, in)
+		return srv.(ServiceServer).Register(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/svc.Service/Call",
+		FullMethod: "/svc.Service/Register",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(ServiceServer).Call(ctx, req.(*Req))
+		return srv.(ServiceServer).Register(ctx, req.(*Req))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -155,8 +155,8 @@ var Service_ServiceDesc = grpc.ServiceDesc{
 	HandlerType: (*ServiceServer)(nil),
 	Methods: []grpc.MethodDesc{
 		{
-			MethodName: "Call",
-			Handler:    _Service_Call_Handler,
+			MethodName: "Register",
+			Handler:    _Service_Register_Handler,
 		},
 	},
 	Streams: []grpc.StreamDesc{

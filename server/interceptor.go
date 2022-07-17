@@ -3,10 +3,12 @@ package main
 import (
 	"context"
 	"errors"
+	"fmt"
 	"google.golang.org/grpc/metadata"
 )
 
 var NotAuthError = errors.New("not auth")
+var NotExistError = errors.New("not exist")
 
 type Interceptor struct {
 }
@@ -18,6 +20,10 @@ func (r Interceptor) Auth(ctx context.Context, man *Manager) (*End, error) {
 		return nil, NotAuthError
 	}
 	s := ids[0]
-	end := man.Add(s)
+	fmt.Printf("ctl id=%s\n", s)
+	end := man.Get(s)
+	if end == nil {
+		return nil, NotExistError
+	}
 	return end, nil
 }
