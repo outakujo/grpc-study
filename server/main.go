@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"flag"
+	"fmt"
 	"github.com/gin-gonic/gin"
 	"google.golang.org/grpc"
 	"google.golang.org/protobuf/types/known/emptypb"
@@ -31,6 +32,7 @@ func (r *Server) Ctl(_ *emptypb.Empty, stream pb.Service_CtlServer) error {
 	}
 	defer func() {
 		manager.Del(end.Id)
+		fmt.Printf("del id=%s\n", end.Id)
 	}()
 	for {
 		err = stream.Send(<-end.Ch)
@@ -38,6 +40,10 @@ func (r *Server) Ctl(_ *emptypb.Empty, stream pb.Service_CtlServer) error {
 			return err
 		}
 	}
+}
+
+func (r *Server) Ping(_ context.Context, _ *emptypb.Empty) (*emptypb.Empty, error) {
+	return &emptypb.Empty{}, nil
 }
 
 var manager = NewManager()
