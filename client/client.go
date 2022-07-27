@@ -50,6 +50,7 @@ type MyCred struct {
 	Id    string
 	Addr  string
 	Recon time.Duration
+	Ch    chan *pb.SysInfo
 }
 
 func (m *MyCred) GetRequestMetadata(_ context.Context, _ ...string) (map[string]string, error) {
@@ -87,5 +88,20 @@ func recvCtl(c pb.ServiceClient) (err error) {
 			continue
 		}
 		fmt.Print(result)
+	}
+}
+
+func report(c pb.ServiceClient, ch chan *pb.SysInfo) (err error) {
+	var rep pb.Service_ReportClient
+	rep, err = c.Report(context.Background())
+	if err != nil {
+		return
+	}
+	for {
+		info := <-ch
+		err = rep.Send(info)
+		if err != nil {
+			return
+		}
 	}
 }

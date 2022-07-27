@@ -26,6 +26,7 @@ type ServiceClient interface {
 	Ping(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*emptypb.Empty, error)
 	Register(ctx context.Context, in *Req, opts ...grpc.CallOption) (*Resp, error)
 	Ctl(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (Service_CtlClient, error)
+	Report(ctx context.Context, opts ...grpc.CallOption) (Service_ReportClient, error)
 }
 
 type serviceClient struct {
@@ -86,6 +87,40 @@ func (x *serviceCtlClient) Recv() (*Cmd, error) {
 	return m, nil
 }
 
+func (c *serviceClient) Report(ctx context.Context, opts ...grpc.CallOption) (Service_ReportClient, error) {
+	stream, err := c.cc.NewStream(ctx, &Service_ServiceDesc.Streams[1], "/svc.Service/Report", opts...)
+	if err != nil {
+		return nil, err
+	}
+	x := &serviceReportClient{stream}
+	return x, nil
+}
+
+type Service_ReportClient interface {
+	Send(*SysInfo) error
+	CloseAndRecv() (*emptypb.Empty, error)
+	grpc.ClientStream
+}
+
+type serviceReportClient struct {
+	grpc.ClientStream
+}
+
+func (x *serviceReportClient) Send(m *SysInfo) error {
+	return x.ClientStream.SendMsg(m)
+}
+
+func (x *serviceReportClient) CloseAndRecv() (*emptypb.Empty, error) {
+	if err := x.ClientStream.CloseSend(); err != nil {
+		return nil, err
+	}
+	m := new(emptypb.Empty)
+	if err := x.ClientStream.RecvMsg(m); err != nil {
+		return nil, err
+	}
+	return m, nil
+}
+
 // ServiceServer is the server API for Service service.
 // All implementations must embed UnimplementedServiceServer
 // for forward compatibility
@@ -93,6 +128,7 @@ type ServiceServer interface {
 	Ping(context.Context, *emptypb.Empty) (*emptypb.Empty, error)
 	Register(context.Context, *Req) (*Resp, error)
 	Ctl(*emptypb.Empty, Service_CtlServer) error
+	Report(Service_ReportServer) error
 	mustEmbedUnimplementedServiceServer()
 }
 
@@ -108,6 +144,9 @@ func (UnimplementedServiceServer) Register(context.Context, *Req) (*Resp, error)
 }
 func (UnimplementedServiceServer) Ctl(*emptypb.Empty, Service_CtlServer) error {
 	return status.Errorf(codes.Unimplemented, "method Ctl not implemented")
+}
+func (UnimplementedServiceServer) Report(Service_ReportServer) error {
+	return status.Errorf(codes.Unimplemented, "method Report not implemented")
 }
 func (UnimplementedServiceServer) mustEmbedUnimplementedServiceServer() {}
 
@@ -179,6 +218,32 @@ func (x *serviceCtlServer) Send(m *Cmd) error {
 	return x.ServerStream.SendMsg(m)
 }
 
+func _Service_Report_Handler(srv interface{}, stream grpc.ServerStream) error {
+	return srv.(ServiceServer).Report(&serviceReportServer{stream})
+}
+
+type Service_ReportServer interface {
+	SendAndClose(*emptypb.Empty) error
+	Recv() (*SysInfo, error)
+	grpc.ServerStream
+}
+
+type serviceReportServer struct {
+	grpc.ServerStream
+}
+
+func (x *serviceReportServer) SendAndClose(m *emptypb.Empty) error {
+	return x.ServerStream.SendMsg(m)
+}
+
+func (x *serviceReportServer) Recv() (*SysInfo, error) {
+	m := new(SysInfo)
+	if err := x.ServerStream.RecvMsg(m); err != nil {
+		return nil, err
+	}
+	return m, nil
+}
+
 // Service_ServiceDesc is the grpc.ServiceDesc for Service service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -200,6 +265,11 @@ var Service_ServiceDesc = grpc.ServiceDesc{
 			StreamName:    "Ctl",
 			Handler:       _Service_Ctl_Handler,
 			ServerStreams: true,
+		},
+		{
+			StreamName:    "Report",
+			Handler:       _Service_Report_Handler,
+			ClientStreams: true,
 		},
 	},
 	Metadata: "svc.proto",

@@ -51,3 +51,5 @@ func (r *Manager) Get(id string) *End {
 	}
 	return end
 }
+
+var manager = NewManager()
