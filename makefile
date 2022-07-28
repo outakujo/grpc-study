@@ -5,4 +5,6 @@ ser:
 	go build -o ser ./server
 cli:
 	go build -o cli ./client
+script:
+	 go-bindata -pkg control -o control/script.go control/script
 build: ser cli

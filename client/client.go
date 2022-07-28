@@ -82,7 +82,7 @@ func recvCtl(c pb.ServiceClient) (err error) {
 		if err != nil {
 			return
 		}
-		result, err := control.Exe(nil, cmd.Name, cmd.Arg...)
+		result, err := control.ExeScript(nil, cmd.Name, cmd.Arg...)
 		if err != nil {
 			fmt.Println(err.Error())
 			continue
