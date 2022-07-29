@@ -5,10 +5,27 @@ import (
 	"grpc-study/pb"
 	"net/http"
 	"strconv"
+	"strings"
 )
+
+var installSh = `#!/bin/bash
+home=%s
+if [ -z "$home" ]; then
+    home=agent
+fi
+id=%s
+server=%s
+grpcAddr=%s
+download="http://${server}/static/cli"
+mkdir -p $home
+cd $home || exit 1
+curl -O -k $download
+chmod +x ./cli
+./cli -id $id -addr $grpcAddr`
 
 func runApiServer(port int) {
 	engine := gin.New()
+	engine.Static("static", "static")
 	engine.POST("ctl", func(c *gin.Context) {
 		var da = struct {
 			Id   string
@@ -35,6 +52,21 @@ func runApiServer(port int) {
 		}
 		end.Ch <- &pb.Cmd{Name: da.Name, Arg: da.Arg}
 		c.JSON(http.StatusOK, "ok")
+	})
+	engine.GET("install", func(c *gin.Context) {
+		home := c.Query("home")
+		id := c.Query("id")
+		if id == "" {
+			c.String(http.StatusOK, "id not be empty")
+			return
+		}
+		host := c.Request.Host
+		split := strings.Split(host, ":")
+		grpcAddr := ""
+		if len(split) == 2 {
+			grpcAddr = split[0] + ":" + strconv.Itoa(port+1)
+		}
+		c.String(http.StatusOK, installSh, home, id, host, grpcAddr)
 	})
 	go func() {
 		err := engine.Run(":" + strconv.Itoa(port))
