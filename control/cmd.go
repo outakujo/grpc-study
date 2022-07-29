@@ -43,18 +43,20 @@ func ExeScript(wr io.Writer, name string, arg ...string) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	err = temp.Close()
-	if err != nil {
-		return "", err
-	}
 	defer func() {
+		_ = temp.Close()
 		_ = os.Remove(temp.Name())
 	}()
 	err = os.Chmod(temp.Name(), 0500)
 	if err != nil {
 		return "", err
 	}
-	command := exec.Command(temp.Name(), arg...)
+	stat, err := temp.Stat()
+	if err != nil {
+		return "", err
+	}
+	command := exec.Command("./"+stat.Name(), arg...)
+	command.Dir = workdir
 	if wr != nil {
 		command.Stdout = wr
 		err := command.Run()
