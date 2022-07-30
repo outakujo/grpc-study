@@ -4,7 +4,8 @@ prot:
 ser:
 	go build -o ser ./server
 cli:
-	go build -o cli ./client
+	mkdir -p static
+	go build -o ./static/cli ./client
 script:
 	 go-bindata -pkg control -o control/script.go control/script
 build: ser cli

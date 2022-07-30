@@ -28,12 +28,36 @@ id=$id
 grpcAddr=$grpcAddr
 
 start() {
-	echo start	
-	nohup ./cli -id \$id -addr \$grpcAddr >log 2>&1
+	if [ -f pid  ]; then
+		echo already start
+		exit  0
+	fi
+	nohup ./cli -id \$id -addr \$grpcAddr >log 2>&1 &
+	code=\$?
+	if [ \$code -eq 0 ]; then
+		echo \$! > pid
+		echo start
+	else
+		echo failed
+		exit \$code
+	fi
 }
 
 stop() {
-	echo stop
+	if [ ! -f pid ]; then
+		echo not start
+		exit  0
+	fi
+	pid=\$(cat pid)
+	kill \$pid
+	code=\$?
+	if [ \$code -eq 0 ]; then
+		rm pid
+		echo stop
+	else
+		echo failed
+		exit \$code
+	fi
 }
 
 case \$1 in
