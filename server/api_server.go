@@ -21,7 +21,42 @@ mkdir -p $home
 cd $home || exit 1
 curl -O -k $download
 chmod +x ./cli
-./cli -id $id -addr $grpcAddr`
+
+cat > agent.sh << EOF
+#!/bin/bash
+id=$id
+grpcAddr=$grpcAddr
+
+start() {
+	echo start	
+	nohup ./cli -id \$id -addr \$grpcAddr >log 2>&1
+}
+
+stop() {
+	echo stop
+}
+
+case \$1 in
+start)
+  start
+  ;;
+stop)
+  stop
+  ;;
+*)
+  echo "Usage: \$0 {start|stop}"
+  ;;
+esac
+EOF
+
+if [ $? -eq 0 ]; then
+	chmod +x agent.sh
+    ./agent.sh start
+else
+	echo failed
+fi
+
+`
 
 func runApiServer(port int) {
 	engine := gin.New()
