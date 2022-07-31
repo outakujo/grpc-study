@@ -97,7 +97,7 @@ func (c *serviceClient) Report(ctx context.Context, opts ...grpc.CallOption) (Se
 }
 
 type Service_ReportClient interface {
-	Send(*SysInfo) error
+	Send(*Event) error
 	CloseAndRecv() (*emptypb.Empty, error)
 	grpc.ClientStream
 }
@@ -106,7 +106,7 @@ type serviceReportClient struct {
 	grpc.ClientStream
 }
 
-func (x *serviceReportClient) Send(m *SysInfo) error {
+func (x *serviceReportClient) Send(m *Event) error {
 	return x.ClientStream.SendMsg(m)
 }
 
@@ -224,7 +224,7 @@ func _Service_Report_Handler(srv interface{}, stream grpc.ServerStream) error {
 
 type Service_ReportServer interface {
 	SendAndClose(*emptypb.Empty) error
-	Recv() (*SysInfo, error)
+	Recv() (*Event, error)
 	grpc.ServerStream
 }
 
@@ -236,8 +236,8 @@ func (x *serviceReportServer) SendAndClose(m *emptypb.Empty) error {
 	return x.ServerStream.SendMsg(m)
 }
 
-func (x *serviceReportServer) Recv() (*SysInfo, error) {
-	m := new(SysInfo)
+func (x *serviceReportServer) Recv() (*Event, error) {
+	m := new(Event)
 	if err := x.ServerStream.RecvMsg(m); err != nil {
 		return nil, err
 	}

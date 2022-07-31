@@ -53,12 +53,34 @@ func (r *Server) Report(stream pb.Service_ReportServer) error {
 		fmt.Printf("del id=%s\n", end.Id)
 	}()
 	for {
-		var sysInfo *pb.SysInfo
-		sysInfo, err = stream.Recv()
+		var ev *pb.Event
+		ev, err = stream.Recv()
 		if err != nil {
 			return err
 		}
-		fmt.Println(end.Id, sysInfo)
+		switch ev.Detail.(type) {
+		case *pb.Event_SysInfo_:
+			sysInfo := ev.GetSysInfo()
+			info := SysInfo{
+				Id:   end.Id,
+				Os:   sysInfo.Os,
+				Arch: sysInfo.Arch,
+			}
+			err = service.SaveSysInfo(&info)
+		case *pb.Event_ScriptResult_:
+			result := ev.GetScriptResult()
+			info := ScriptResult{
+				Id:     end.Id,
+				Code:   int(result.Code),
+				Stdout: result.Stdout,
+			}
+			err = service.SaveScriptResult(&info)
+		default:
+			fmt.Println("unknow event type ")
+		}
+		if err != nil {
+			fmt.Println(err)
+		}
 	}
 }
 

@@ -10,7 +10,7 @@ service Service {
   rpc Ping(google.protobuf.Empty) returns (google.protobuf.Empty);
   rpc Register(Req) returns (Resp);
   rpc Ctl(google.protobuf.Empty) returns (stream Cmd);
-  rpc Report(stream SysInfo) returns (google.protobuf.Empty);
+  rpc Report(stream Event) returns (google.protobuf.Empty);
 }
 
 message Req {
@@ -26,7 +26,21 @@ message Cmd {
   repeated string arg = 2;
 }
 
-message SysInfo {
-  string os = 1;
-  string arch = 2;
+message Event {
+
+  message SysInfo {
+    string os = 1;
+    string arch = 2;
+  }
+
+  message ScriptResult {
+    uint32  code = 1;
+    string stdout = 2;
+  }
+
+  oneof Detail {
+    SysInfo sysInfo = 1;
+    ScriptResult scriptResult = 2;
+  }
+
 }

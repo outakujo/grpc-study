@@ -24,12 +24,12 @@ func main() {
 		Id:    *id,
 		Addr:  *addr,
 		Recon: time.Duration(*recon) * time.Second,
-		Ch:    make(chan *pb.SysInfo),
+		Ch:    make(chan *pb.Event),
 	}
 	daemon()
 	for {
-		info := &pb.SysInfo{Os: runtime.GOOS, Arch: runtime.GOARCH}
-		mycred.Ch <- info
+		info := &pb.Event_SysInfo{Os: runtime.GOOS, Arch: runtime.GOARCH}
+		mycred.Ch <- &pb.Event{Detail: &pb.Event_SysInfo_{SysInfo: info}}
 		time.Sleep(time.Duration(*repor) * time.Second)
 	}
 }

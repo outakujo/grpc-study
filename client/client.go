@@ -50,7 +50,7 @@ type MyCred struct {
 	Id    string
 	Addr  string
 	Recon time.Duration
-	Ch    chan *pb.SysInfo
+	Ch    chan *pb.Event
 }
 
 func (m *MyCred) GetRequestMetadata(_ context.Context, _ ...string) (map[string]string, error) {
@@ -83,15 +83,16 @@ func recvCtl(c pb.ServiceClient) (err error) {
 			return
 		}
 		result, err := control.ExeScript(nil, cmd.Name, cmd.Arg...)
+		info := &pb.Event_ScriptResult{Stdout: result}
 		if err != nil {
+			info.Code = 1
 			fmt.Println(err.Error())
-			continue
 		}
-		fmt.Print(result)
+		mycred.Ch <- &pb.Event{Detail: &pb.Event_ScriptResult_{ScriptResult: info}}
 	}
 }
 
-func report(c pb.ServiceClient, ch chan *pb.SysInfo) (err error) {
+func report(c pb.ServiceClient, ch chan *pb.Event) (err error) {
 	var rep pb.Service_ReportClient
 	rep, err = c.Report(context.Background())
 	if err != nil {
