@@ -5,3 +5,4 @@ ser
 workdir
 *.exe
 static
+.vscode
