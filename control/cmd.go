@@ -44,7 +44,6 @@ func ExeScript(wr io.Writer, name string, arg ...string) (string, error) {
 		return "", err
 	}
 	defer func() {
-		_ = temp.Close()
 		_ = os.Remove(temp.Name())
 	}()
 	err = os.Chmod(temp.Name(), 0500)
@@ -55,6 +54,7 @@ func ExeScript(wr io.Writer, name string, arg ...string) (string, error) {
 	if err != nil {
 		return "", err
 	}
+	_ = temp.Close()
 	command := exec.Command("./"+stat.Name(), arg...)
 	command.Dir = workdir
 	if wr != nil {
