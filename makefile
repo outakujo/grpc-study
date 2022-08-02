@@ -11,3 +11,6 @@ script:
 build: ser cli
 crt:
 	cd cert && ./gen
+clean:
+	rm -r static
+	rm ser
