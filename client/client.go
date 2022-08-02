@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials"
 	"google.golang.org/grpc/credentials/insecure"
 	"google.golang.org/protobuf/types/known/emptypb"
 	"grpc-study/control"
@@ -25,9 +26,20 @@ func getClient() pb.ServiceClient {
 	for {
 		time.Sleep(mycred.Recon)
 		fmt.Println("waiting connect grpc server ...")
-		credentials := grpc.WithPerRPCCredentials(&mycred)
-		con, err := grpc.Dial(mycred.Addr, grpc.WithTransportCredentials(insecure.
-			NewCredentials()), credentials)
+		precred := grpc.WithPerRPCCredentials(&mycred)
+		options := make([]grpc.DialOption, 0)
+		options = append(options, precred)
+		if mycred.Cert != "" {
+			file, err := credentials.NewClientTLSFromFile(mycred.Cert, "")
+			if err != nil {
+				panic(err)
+			}
+			options = append(options, grpc.WithTransportCredentials(file))
+		} else {
+			options = append(options, grpc.WithTransportCredentials(insecure.
+				NewCredentials()))
+		}
+		con, err := grpc.Dial(mycred.Addr, options...)
 		if err != nil {
 			fmt.Println(err)
 			continue
@@ -51,6 +63,7 @@ type MyCred struct {
 	Addr  string
 	Recon time.Duration
 	Ch    chan *pb.Event
+	Cert  string
 }
 
 func (m *MyCred) GetRequestMetadata(_ context.Context, _ ...string) (map[string]string, error) {

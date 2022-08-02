@@ -14,6 +14,8 @@ func main() {
 	dbuser := flag.String("db-user", "root", "db user")
 	dbhost := flag.String("db-host", "127.0.0.1", "db host")
 	dbdb := flag.String("db-db", "agent", "db database")
+	cert := flag.String("cert", "", "ssl cert")
+	key := flag.String("key", "", "ssl key")
 	flag.Parse()
 	dsn := fmt.Sprintf("%s:%s@tcp(%s:%d)/%s?charset=utf8mb4&parseTime=True&loc=Local",
 		*dbuser, *dbpass, *dbhost, *dbport, *dbdb)
@@ -25,5 +27,5 @@ func main() {
 	}
 	service = NewService(db)
 	runApiServer(*port)
-	runGrpcServer(*port)
+	runGrpcServer(*port, *cert, *key)
 }

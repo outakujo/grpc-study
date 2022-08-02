@@ -15,6 +15,7 @@ func main() {
 	id := flag.String("id", "", "client id")
 	recon := flag.Int("recon", 2, "client reconnect time(second)")
 	repor := flag.Int("report", 10, "client report time(second)")
+	cert := flag.String("cert", "", "ssl cert")
 	flag.Parse()
 	if *id == "" {
 		fmt.Println("-id not be empty")
@@ -25,6 +26,7 @@ func main() {
 		Addr:  *addr,
 		Recon: time.Duration(*recon) * time.Second,
 		Ch:    make(chan *pb.Event),
+		Cert:  *cert,
 	}
 	daemon()
 	for {

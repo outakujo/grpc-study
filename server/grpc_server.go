@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials"
 	"google.golang.org/protobuf/types/known/emptypb"
 	"grpc-study/pb"
 	"net"
@@ -84,9 +85,17 @@ func (r *Server) Report(stream pb.Service_ReportServer) error {
 	}
 }
 
-func runGrpcServer(port int) {
+func runGrpcServer(port int, cert, key string) {
 	var ser Server
-	server := grpc.NewServer()
+	options := make([]grpc.ServerOption, 0)
+	if cert != "" && key != "" {
+		file, err := credentials.NewServerTLSFromFile(cert, key)
+		if err != nil {
+			panic(err)
+		}
+		options = append(options, grpc.Creds(file))
+	}
+	server := grpc.NewServer(options...)
 	pb.RegisterServiceServer(server, &ser)
 	listen, err := net.Listen("tcp", ":"+strconv.Itoa(port+1))
 	if err != nil {

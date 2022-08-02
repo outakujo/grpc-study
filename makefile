@@ -9,3 +9,5 @@ cli:
 script:
 	 go-bindata -pkg control -o control/script.go control/script
 build: ser cli
+crt:
+	cd cert && ./gen
